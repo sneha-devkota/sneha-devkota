@@ -1,9 +1,10 @@
-<h1 align="center" style="color: #fefe46;">- CS underg</h1>
+<h1 align="center" style="color: #fefe46;">- Hello there 👋 </h1>
+Welcome to my GitHub profile! I'm Sneha, a passionate **BSc CSIT student** and an aspiring **front-end developer**.
 <hr/>
 
 <p align="center">
-  <img src="https://streak-stats.demolab.com?user=YOUR_USERNAME&theme=dark&hide_border=true&date_format=j%20M%5B%20Y%5D" height="180em"/>
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=YOUR_USERNAME&layout=compact&theme=dark&hide_border=true" height="180em"/>
+  <img src="https://streak-stats.demolab.com?user=sneha_devkota&theme=dark&hide_border=true&date_format=j%20M%5B%20Y%5D" height="180em"/>
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=sneha_devkota&layout=compact&theme=dark&hide_border=true" height="180em"/>
 </p>
 
 ---
@@ -40,22 +41,10 @@
 ## Let's Connect:
 
 <p align="left">
-  <a href="https://instagram.com/YOUR_INSTAGRAM" target="_blank">
-    <img src="https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white"/>
-  </a>
-  <a href="https://discord.com/users/YOUR_DISCORD" target="_blank">
-    <img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white"/>
-  </a>
-  <a href="mailto:YOUR_EMAIL@gmail.com" target="_blank">
+  <a href="mailto:snehadevkota534@gmail.com" target="_blank">
     <img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white"/>
   </a>
-  <a href="https://www.linkedin.com/in/YOUR_LINKEDIN" target="_blank">
+  <a href="https://www.linkedin.com/in/sneha-devkota" target="_blank">
     <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"/>
-  </a>
-  <a href="https://ko-fi.com/YOUR_KOFI" target="_blank">
-    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=white"/>
-  </a>
-  <a href="https://www.kaggle.com/YOUR_KAGGLE" target="_blank">
-    <img src="https://img.shields.io/badge/Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white"/>
   </a>
 </p>
