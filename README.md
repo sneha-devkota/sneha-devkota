@@ -2,7 +2,7 @@
 
 ---
 
-## 🔥 GitHub Streak & Top Languages
+
 
 <div align="center">
   <table>
