@@ -20,9 +20,9 @@ Welcome to my GitHub profile! I'm Sneha, a passionate **BSc CSIT student** and a
 
 ## 📊 GitHub Stats
 
-![Sneha's GitHub stats](https://github-readme-stats.vercel.app/api?username=your-username&show_icons=true&theme=tokyonight)
+![Sneha's GitHub stats](https://github-readme-stats.vercel.app/api?username=sneha-devkota&show_icons=true&theme=tokyonight)
 
 ## 🧠 Top Languages
 
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=your-username&layout=compact&theme=tokyonight)
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=sneha-devkota&layout=compact&theme=tokyonight)
 
