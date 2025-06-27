@@ -17,3 +17,12 @@ Welcome to my GitHub profile! I'm Sneha, a passionate **BSc CSIT student** and a
 ## 🔥 GitHub Streak
 
 [![GitHub Streak](https://streak-stats.demolab.com?user=sneha-devkota&theme=tokyonight&hide_border=false)](https://git.io/streak-stats)
+
+## 📊 GitHub Stats
+
+![Sneha's GitHub stats](https://github-readme-stats.vercel.app/api?username=your-username&show_icons=true&theme=tokyonight)
+
+## 🧠 Top Languages
+
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=your-username&layout=compact&theme=tokyonight)
+
