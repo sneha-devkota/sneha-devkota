@@ -1,4 +1,4 @@
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&duration=3500&pause=100&color=5B2C6F&center=true&vCenter=true&width=1300&lines=Hello+there+%F0%9F%91%8B;I+am+Sneha!;+BSc.+CSIT+Undergrad+Student;Interested+in+Front-end%2C+Game+Dev+%26+Creative+Tech+%F0%9F%8C%B1)](https://github.com/your-username)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=36&duration=3500&pause=100&color=5B2C6F&center=true&vCenter=true&width=1300&lines=Hello+there+%F0%9F%91%8B;I+am+Sneha!;+BSc.+CSIT+Undergrad+Student;Interested+in+Front-end%2C+Game+Dev+%26+Creative+Tech+%F0%9F%8C%B1)](https://github.com/sneha-devkota)
 
 ---
 
