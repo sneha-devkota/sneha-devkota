@@ -3,10 +3,10 @@ on:
   schedule:
     # Update every 12 hours
     - cron: "0 */12 * * *"  # Fixed: Added missing *
-  
+
   # Allow manual trigger
   workflow_dispatch:
-  
+
   # Update on push to main branch
   push:
     branches: [ main, master ]
@@ -15,36 +15,37 @@ jobs:
   generate-detective-animation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           # Removed cache since we're not using npm dependencies
-      
+
       - name: 📦 Install dependencies
         run: |
           cd detective
           echo "No dependencies needed - using static HTML file"
-      
+
       - name: 🕵️ Generate detective animation
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd detective
+          mkdir -p ../output   # ✅ ADDED LINE: Create output directory if it doesn't exist
           # Copy the HTML file to output as detective.html
           cp index.html ../output/detective.html
-          
+
           # If you want to keep the SVG generation, uncomment next line:
           # node detective.js
-      
+
       - name: 📊 Check if animation was generated
         run: |
           if [ -f "output/detective.html" ]; then
@@ -54,13 +55,13 @@ jobs:
             echo "❌ Detective animation not found"
             exit 1
           fi
-      
+
       - name: 🔄 Commit and push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "Detective Bot"
           git add output/detective.html
-          
+
           # Only commit if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -68,7 +69,7 @@ jobs:
             git commit -m "🕵️ Update detective contribution animation $(date '+%Y-%m-%d %H:%M')"
             git push
           fi
-      
+
       - name: 📈 Upload animation as artifact
         uses: actions/upload-artifact@v4
         with:
