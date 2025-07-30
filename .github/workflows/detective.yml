@@ -41,7 +41,7 @@ jobs:
           cd detective
           mkdir -p ../output   # ✅ ADDED LINE: Create output directory if it doesn't exist
           # Copy the HTML file to output as detective.html
-          cp index.html ../output/detective.html
+          cp index.html ../output/index.html
 
           # If you want to keep the SVG generation, uncomment next line:
           # node detective.js
