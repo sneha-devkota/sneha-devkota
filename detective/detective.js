@@ -1,20 +1,32 @@
-// detective/detective.js
+const fs = require('fs');
+const path = require('path');
 
-const fs = require("fs");
-const path = require("path");
+const templatePath = path.join(__dirname, 'template.html');
+const outputPath = path.join(__dirname, '..', 'output', 'index.html');
 
-const htmlPath = path.join(__dirname, "template.html");
-const outputDir = path.join(__dirname, "..", "output");
+// Load HTML template
+let template = fs.readFileSync(templatePath, 'utf8');
 
-// Make sure output directory exists
-if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
+// Generate animated footprints (random positions)
+function generateFootprints(count = 200) {
+  let footprints = '';
+  for (let i = 0; i < count; i++) {
+    const x = Math.floor(Math.random() * 1200);
+    const y = Math.floor(Math.random() * 200);
+    footprints += `<circle cx="${x}" cy="${y}" r="4" class="footprint"/>`;
+  }
+  return footprints;
 }
 
-// Read the HTML file
-const html = fs.readFileSync(htmlPath, "utf-8");
+// Inject footprints into the template
+const withFootprints = template.replace(
+  '<!-- The detective footprints will be added dynamically by JS -->',
+  generateFootprints()
+);
 
-// Write it into the output directory
-fs.writeFileSync(path.join(outputDir, "index.html"), html);
+// Ensure output dir exists
+fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-console.log("✅ index.html generated in output/");
+// Save final animated page
+fs.writeFileSync(outputPath, withFootprints);
+console.log('✅ Animation generated at output/index.html');
