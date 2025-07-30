@@ -47,4 +47,8 @@
 ---
 
 ## 🕵️ Code Detective
-<img src="https://raw.githubusercontent.com/sneha-devkota/sneha-devkota/output/detective.svg" />
+###
+***
+<br clear="both">
+
+<img src="https://raw.githubusercontent.com/sneha-devkota/sneha-devkota/output/snake.svg" alt="Snake animation" />
