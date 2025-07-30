@@ -47,8 +47,14 @@
 ---
 
 ## 🕵️ Code Detective
-###
-***
-<br clear="both">
+<div align="center">
+  <img src="https://raw.githubusercontent.com/sneha-devkota/sneha-devkota/output/detective.svg" alt="Detective Animation" />
+Investigating the digital crime scene... Evidence and clues are being analyzed!
+</div>
 
-<img src="https://raw.githubusercontent.com/sneha-devkota/sneha-devkota/output/snake.svg" alt="Snake animation" />
+🔍 Case Status
+
+🟢 Active Investigation: GitHub contribution patterns analyzed
+🔴 Evidence Found: Code commits reveal suspicious activity
+🔵 Clues Discovered: Regular patterns in development workflow
+🟡 Currently Investigating: Advanced detection algorithms running
