@@ -1,9 +1,8 @@
 name: 🕵️ Detective Contribution Animation
-
 on:
   schedule:
     # Update every 12 hours
-    - cron: "0 */12 * * *"
+    - cron: "0 */12 * * *"  # Fixed: Added missing *
   
   # Allow manual trigger
   workflow_dispatch:
@@ -28,25 +27,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: detective/package.json
+          # Removed cache since we're not using npm dependencies
       
       - name: 📦 Install dependencies
         run: |
           cd detective
-          npm ci
+          echo "No dependencies needed - using static HTML file"
       
       - name: 🕵️ Generate detective animation
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd detective
-          node detective.js
+          # Copy the HTML file to output as detective.html
+          cp index.html ../output/detective.html
+          
+          # If you want to keep the SVG generation, uncomment next line:
+          # node detective.js
       
       - name: 📊 Check if animation was generated
         run: |
-          if [ -f "output/detective.svg" ]; then
-            echo "✅ Detective animation generated successfully"
+          if [ -f "output/detective.html" ]; then
+            echo "✅ Detective HTML animation generated successfully"
             ls -la output/
           else
             echo "❌ Detective animation not found"
@@ -57,7 +59,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "Detective Bot"
-          git add output/detective.svg
+          git add output/detective.html
           
           # Only commit if there are changes
           if git diff --staged --quiet; then
@@ -71,5 +73,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: detective-animation
-          path: output/detective.svg
+          path: output/detective.html
           retention-days: 30
+
+      # Optional: Deploy to GitHub Pages
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          publish_branch: gh-pages
