@@ -47,4 +47,4 @@
 ---
 
 ## 🕵️ Code Detective
-[![Detective Animation](https://img.shields.io/badge/🕵️-Detective%20Animation-green)](https://sneha-devkota.github.io/sneha-devkota/detective.html)
+[![Detective Animation](https://img.shields.io/badge/🕵️-Detective%20Animation-green)](https://sneha-devkota.github.io/sneha-devkota/index.html)
