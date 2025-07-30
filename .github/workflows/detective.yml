@@ -60,17 +60,17 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "Detective Bot"
-          git add output/detective.html
+          git add output/index.html
           
           # Only commit if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "🕵️ Update detective contribution animation $(date '+%Y-%m-%d %H:%M')"
-            
-            # ✅ Fix: Set token for authentication
             git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-            
+            git push
+          fi
+
             git push
           fi
 
