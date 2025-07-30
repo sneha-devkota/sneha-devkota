@@ -1,8 +1,10 @@
 {
-  "name": "detective-contribution-animation",
+  "name": "detective-animation",
   "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@octokit/rest": "^19.0.0"
+  "description": "Detective GitHub grid animation",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static HTML file - no build required'",
+    "start": "npx http-server . -p 3000"
   }
 }
