@@ -1,5 +1,4 @@
-name: Generate cat and mouse animation (Snake Temp)
-
+name: Generate cat and mouse animation
 on:
   schedule:
     - cron: "0 */12 * * *"
@@ -8,22 +7,241 @@ on:
     branches:
       - main
       - master
-
 jobs:
   generate:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
-      - name: generate snake.svg (placeholder for cat-mouse)
-        uses: Platane/snk/svg-only@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          github_user_name: sneha-devkota
-          outputs: dist/cat-mouse.svg?palette=github-dark&color_snake=#FF69B4
-
-      - name: push cat-mouse.svg to the output branch
+          node-version: '18'
+          
+      - name: Create cat-mouse generator script
+        run: |
+          mkdir -p scripts
+          cat > scripts/cat-mouse-generator.js << 'EOF'
+          #!/usr/bin/env node
+          
+          const fs = require('fs');
+          
+          class CatMouseGenerator {
+              constructor(options = {}) {
+                  this.username = options.github_user_name || 'sneha-devkota';
+                  this.width = 52;
+                  this.height = 7;
+                  this.cellSize = 11;
+                  this.cellSpacing = 1;
+                  this.palette = options.palette || 'github-dark';
+                  this.colors = this.getColorPalette();
+                  
+                  this.cat = { x: 0, y: 0 };
+                  this.mouse = { x: this.width - 1, y: this.height - 1 };
+                  this.catTrail = [];
+                  this.mouseTrail = [];
+                  this.maxTrailLength = 8;
+                  this.pouncePositions = [];
+                  this.animationSteps = 200;
+                  this.currentStep = 0;
+              }
+          
+              getColorPalette() {
+                  return {
+                      background: '#0d1117',
+                      levels: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                      cat: '#FF69B4',
+                      mouse: '#FFA500',
+                      catTrail: '#FF1493',
+                      mouseTrail: '#FF8C00',
+                      pounce: '#FF0080'
+                  };
+              }
+          
+              getDistance(pos1, pos2) {
+                  return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
+              }
+          
+              getValidMoves(pos, avoidPos = null) {
+                  const moves = [];
+                  const directions = [
+                      { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }
+                  ];
+          
+                  for (const dir of directions) {
+                      const newX = pos.x + dir.x;
+                      const newY = pos.y + dir.y;
+                      
+                      if (newX >= 0 && newX < this.width && newY >= 0 && newY < this.height) {
+                          moves.push({ x: newX, y: newY });
+                      }
+                  }
+                  
+                  if (avoidPos) {
+                      return moves.filter(move => this.getDistance(move, avoidPos) > 1.5);
+                  }
+                  
+                  return moves;
+              }
+          
+              moveMouse() {
+                  const distance = this.getDistance(this.mouse, this.cat);
+                  let newPos;
+                  
+                  if (distance < 3) {
+                      const validMoves = this.getValidMoves(this.mouse, this.cat);
+                      if (validMoves.length > 0) {
+                          newPos = validMoves.reduce((best, move) => {
+                              const moveDist = this.getDistance(move, this.cat);
+                              const bestDist = this.getDistance(best, this.cat);
+                              return moveDist > bestDist ? move : best;
+                          });
+                      } else {
+                          const allMoves = this.getValidMoves(this.mouse);
+                          newPos = allMoves[Math.floor(Math.random() * allMoves.length)];
+                      }
+                  } else {
+                      const validMoves = this.getValidMoves(this.mouse);
+                      newPos = validMoves[Math.floor(Math.random() * validMoves.length)];
+                  }
+                  
+                  if (newPos) {
+                      this.mouseTrail.unshift({ ...this.mouse });
+                      if (this.mouseTrail.length > this.maxTrailLength) {
+                          this.mouseTrail.pop();
+                      }
+                      this.mouse = newPos;
+                  }
+              }
+          
+              moveCat() {
+                  const distance = this.getDistance(this.cat, this.mouse);
+                  let newPos;
+                  
+                  if (distance <= 1.5 && Math.random() < 0.3) {
+                      this.pouncePositions.push({ ...this.cat, step: this.currentStep });
+                      if (Math.random() < 0.8) {
+                          newPos = { ...this.mouse };
+                      }
+                  }
+                  
+                  if (!newPos) {
+                      const validMoves = this.getValidMoves(this.cat);
+                      if (validMoves.length > 0) {
+                          newPos = validMoves.reduce((best, move) => {
+                              const moveDist = this.getDistance(move, this.mouse);
+                              const bestDist = this.getDistance(best, this.mouse);
+                              return moveDist < bestDist ? move : best;
+                          });
+                          
+                          if (Math.random() < 0.2) {
+                              newPos = validMoves[Math.floor(Math.random() * validMoves.length)];
+                          }
+                      }
+                  }
+                  
+                  if (newPos) {
+                      this.catTrail.unshift({ ...this.cat });
+                      if (this.catTrail.length > this.maxTrailLength) {
+                          this.catTrail.pop();
+                      }
+                      this.cat = newPos;
+                  }
+              }
+          
+              step() {
+                  this.moveMouse();
+                  this.moveCat();
+                  this.currentStep++;
+                  this.pouncePositions = this.pouncePositions.filter(
+                      pounce => this.currentStep - pounce.step < 10
+                  );
+              }
+          
+              generateSVG() {
+                  const svgWidth = this.width * (this.cellSize + this.cellSpacing);
+                  const svgHeight = this.height * (this.cellSize + this.cellSpacing);
+                  
+                  let svg = `<svg viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">\n`;
+                  svg += `  <rect width="${svgWidth}" height="${svgHeight}" fill="${this.colors.background}"/>\n`;
+                  
+                  // Base grid
+                  for (let x = 0; x < this.width; x++) {
+                      for (let y = 0; y < this.height; y++) {
+                          const level = Math.floor(Math.random() * 5);
+                          const color = this.colors.levels[level];
+                          const posX = x * (this.cellSize + this.cellSpacing);
+                          const posY = y * (this.cellSize + this.cellSpacing);
+                          svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${color}" rx="2"/>\n`;
+                      }
+                  }
+                  
+                  // Run animation
+                  for (let i = 0; i < this.animationSteps; i++) {
+                      this.step();
+                  }
+                  
+                  // Draw trails and characters
+                  this.mouseTrail.forEach((pos, index) => {
+                      const opacity = (this.maxTrailLength - index) / this.maxTrailLength * 0.6;
+                      const posX = pos.x * (this.cellSize + this.cellSpacing);
+                      const posY = pos.y * (this.cellSize + this.cellSpacing);
+                      svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.mouseTrail}" opacity="${opacity}" rx="2"/>\n`;
+                  });
+                  
+                  this.catTrail.forEach((pos, index) => {
+                      const opacity = (this.maxTrailLength - index) / this.maxTrailLength * 0.8;
+                      const posX = pos.x * (this.cellSize + this.cellSpacing);
+                      const posY = pos.y * (this.cellSize + this.cellSpacing);
+                      svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.catTrail}" opacity="${opacity}" rx="2"/>\n`;
+                  });
+                  
+                  this.pouncePositions.forEach(pounce => {
+                      const posX = pounce.x * (this.cellSize + this.cellSpacing);
+                      const posY = pounce.y * (this.cellSize + this.cellSpacing);
+                      svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.pounce}" opacity="0.9" rx="2"/>\n`;
+                  });
+                  
+                  const mouseX = this.mouse.x * (this.cellSize + this.cellSpacing);
+                  const mouseY = this.mouse.y * (this.cellSize + this.cellSpacing);
+                  svg += `  <rect x="${mouseX}" y="${mouseY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.mouse}" rx="2"/>\n`;
+                  
+                  const catX = this.cat.x * (this.cellSize + this.cellSpacing);
+                  const catY = this.cat.y * (this.cellSize + this.cellSpacing);
+                  svg += `  <rect x="${catX}" y="${catY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.cat}" rx="2"/>\n`;
+                  
+                  svg += '</svg>';
+                  return svg;
+              }
+          }
+          
+          // Generate the animation
+          const generator = new CatMouseGenerator({
+              github_user_name: process.env.GITHUB_USER_NAME || 'sneha-devkota',
+              palette: 'github-dark'
+          });
+          
+          const svg = generator.generateSVG();
+          
+          if (!fs.existsSync('dist')) {
+              fs.mkdirSync('dist', { recursive: true });
+          }
+          
+          fs.writeFileSync('dist/cat-mouse.svg', svg);
+          console.log('Cat and mouse animation generated!');
+          EOF
+          
+      - name: Generate cat-mouse.svg
+        run: |
+          node scripts/cat-mouse-generator.js
+        env:
+          GITHUB_USER_NAME: sneha-devkota
+          
+      - name: Push cat-mouse.svg to the output branch
         uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
           target_branch: output
