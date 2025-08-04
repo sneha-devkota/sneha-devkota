@@ -1,12 +1,13 @@
-name: Generate stage performer animation
+name: Generate cat and mouse animation (Snake Temp)
 
 on:
   schedule:
-    - cron: "0 */12 * * *"  # Every 12 hours
+    - cron: "0 */12 * * *"
   workflow_dispatch:
   push:
     branches:
-      - main  # change to 'master' if your default branch is master
+      - main
+      - master
 
 jobs:
   generate:
@@ -16,51 +17,13 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: generate snake.svg (placeholder for cat-mouse)
+        uses: Platane/snk/svg-only@v3
         with:
-          fetch-depth: 0
+          github_user_name: sneha-devkota
+          outputs: dist/cat-mouse.svg?palette=github-dark&color_snake=#FF69B4
 
-      - name: Generate SVG performance animation
-        run: |
-          mkdir -p dist
-          cat <<EOF > dist/stage-performance.svg
-<svg width="800" height="150" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="#0d1117"/>
-  <text x="20" y="40" font-size="22" fill="#c9d1d9">🎤 Singer on Stage</text>
-
-  <!-- Spotlight animation -->
-  <circle cx="150" cy="90" r="40" fill="gold" opacity="0.3">
-    <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite"/>
-  </circle>
-
-  <!-- Singer icon jumping -->
-  <text x="140" y="100" font-size="32">🎤</text>
-  <text x="180" y="105" font-size="28">🕺</text>
-  <animateTransform attributeName="transform"
-    type="translate"
-    values="0 0; 10 0; 0 0"
-    dur="1s"
-    repeatCount="indefinite"/>
-
-  <!-- Fireworks on the right -->
-  <circle cx="700" cy="50" r="6" fill="red">
-    <animate attributeName="r" values="6;12;6" dur="1s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="730" cy="70" r="4" fill="blue">
-    <animate attributeName="r" values="4;10;4" dur="1.5s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="1;0.2;1" dur="1.5s" repeatCount="indefinite"/>
-  </circle>
-
-  <!-- Trail of notes -->
-  <text x="220" y="95" font-size="20">🎵</text>
-  <text x="250" y="90" font-size="18">🎶</text>
-  <text x="280" y="85" font-size="16">🎵</text>
-</svg>
-EOF
-
-      - name: Push animation to output branch
+      - name: push cat-mouse.svg to the output branch
         uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
           target_branch: output
