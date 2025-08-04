@@ -270,13 +270,15 @@ jobs:
           EOF
           
       - name: Push animation to output branch
-        uses: crazy-max/ghaction-github-pages@v4.0.0
-        with:
-          target_branch: output
-          build_dir: dist
-          commit_message: "Update cat chase mouse animation"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout --orphan output
+          git rm -rf .
+          cp dist/* .
+          git add .
+          git commit -m "Update cat chase mouse animation"
+          git push --force origin output
           
       - name: Create README for output branch
         run: |
