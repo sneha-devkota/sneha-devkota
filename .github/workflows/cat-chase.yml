@@ -2,10 +2,11 @@ name: Generate cat and mouse animation
 
 on:
   schedule:
-    - cron: "* */12 * * *"
+    - cron: "0 */12 * * *" # runs every 12 hours
   workflow_dispatch:
   push:
     branches:
+      - main
       - master
 
 jobs:
@@ -16,13 +17,16 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: generate cat-mouse.svg
-        uses: your-fork/cat-mouse-svg-only@v1
-        with:
-          github_user_name: ${{ github.repository_owner }}
-          outputs: dist/cat-mouse.svg?palette=github-dark&color_mouse=#ffffff&color_cat=#ff5500
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: push cat-mouse.svg to the output branch
+      - name: Generate cat-mouse.svg
+        uses: sneha-devkota/cat-mouse-svg-action@v1
+        with:
+          github_user_name: sneha-devkota
+          outputs: dist/cat-mouse.svg?palette=github-dark&cat_color=#FFD700&mouse_color=#A9A9A9
+
+      - name: Push cat-mouse.svg to the output branch
         uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
           target_branch: output
