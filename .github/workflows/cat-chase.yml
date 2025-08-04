@@ -1,279 +1,66 @@
-name: Generate cat and mouse animation
+# .github/workflows/stage-performance.yml
+
+name: Generate stage performer animation
+
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 */12 * * *"  # Every 12 hours
   workflow_dispatch:
   push:
     branches:
-      - main
       - master
+
 jobs:
   generate:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Create cat-mouse generator script
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate SVG performance animation
         run: |
-          mkdir -p scripts
-          cat > scripts/cat-mouse-generator.js << 'EOF'
-          #!/usr/bin/env node
-          
-          const fs = require('fs');
-          
-          class CatMouseGenerator {
-              constructor(options = {}) {
-                  this.username = options.github_user_name || 'sneha-devkota';
-                  this.width = 52;
-                  this.height = 7;
-                  this.cellSize = 11;
-                  this.cellSpacing = 1;
-                  this.palette = options.palette || 'github-dark';
-                  this.colors = this.getColorPalette();
-                  
-                  this.cat = { x: 0, y: 0 };
-                  this.mouse = { x: this.width - 1, y: this.height - 1 };
-                  this.catTrail = [];
-                  this.mouseTrail = [];
-                  this.maxTrailLength = 8;
-                  this.pouncePositions = [];
-                  this.animationSteps = 200;
-                  this.currentStep = 0;
-              }
-          
-              getColorPalette() {
-                  return {
-                      background: '#0d1117',
-                      levels: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-                      cat: '#FF69B4',
-                      mouse: '#FFA500',
-                      catTrail: '#FF1493',
-                      mouseTrail: '#FF8C00',
-                      pounce: '#FF0080'
-                  };
-              }
-          
-              getDistance(pos1, pos2) {
-                  return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
-              }
-          
-              getValidMoves(pos, avoidPos = null) {
-                  const moves = [];
-                  const directions = [
-                      { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }
-                  ];
-          
-                  for (const dir of directions) {
-                      const newX = pos.x + dir.x;
-                      const newY = pos.y + dir.y;
-                      
-                      if (newX >= 0 && newX < this.width && newY >= 0 && newY < this.height) {
-                          moves.push({ x: newX, y: newY });
-                      }
-                  }
-                  
-                  if (avoidPos) {
-                      return moves.filter(move => this.getDistance(move, avoidPos) > 1.5);
-                  }
-                  
-                  return moves;
-              }
-          
-              moveMouse() {
-                  const distance = this.getDistance(this.mouse, this.cat);
-                  let newPos;
-                  
-                  if (distance < 3) {
-                      const validMoves = this.getValidMoves(this.mouse, this.cat);
-                      if (validMoves.length > 0) {
-                          newPos = validMoves.reduce((best, move) => {
-                              const moveDist = this.getDistance(move, this.cat);
-                              const bestDist = this.getDistance(best, this.cat);
-                              return moveDist > bestDist ? move : best;
-                          });
-                      } else {
-                          const allMoves = this.getValidMoves(this.mouse);
-                          newPos = allMoves[Math.floor(Math.random() * allMoves.length)];
-                      }
-                  } else {
-                      const validMoves = this.getValidMoves(this.mouse);
-                      newPos = validMoves[Math.floor(Math.random() * validMoves.length)];
-                  }
-                  
-                  if (newPos) {
-                      this.mouseTrail.unshift({ ...this.mouse });
-                      if (this.mouseTrail.length > this.maxTrailLength) {
-                          this.mouseTrail.pop();
-                      }
-                      this.mouse = newPos;
-                  }
-              }
-          
-              moveCat() {
-                  const distance = this.getDistance(this.cat, this.mouse);
-                  let newPos;
-                  
-                  if (distance <= 1.5 && Math.random() < 0.3) {
-                      this.pouncePositions.push({ ...this.cat, step: this.currentStep });
-                      if (Math.random() < 0.8) {
-                          newPos = { ...this.mouse };
-                      }
-                  }
-                  
-                  if (!newPos) {
-                      const validMoves = this.getValidMoves(this.cat);
-                      if (validMoves.length > 0) {
-                          newPos = validMoves.reduce((best, move) => {
-                              const moveDist = this.getDistance(move, this.mouse);
-                              const bestDist = this.getDistance(best, this.mouse);
-                              return moveDist < bestDist ? move : best;
-                          });
-                          
-                          if (Math.random() < 0.2) {
-                              newPos = validMoves[Math.floor(Math.random() * validMoves.length)];
-                          }
-                      }
-                  }
-                  
-                  if (newPos) {
-                      this.catTrail.unshift({ ...this.cat });
-                      if (this.catTrail.length > this.maxTrailLength) {
-                          this.catTrail.pop();
-                      }
-                      this.cat = newPos;
-                  }
-              }
-          
-              step() {
-                  this.moveMouse();
-                  this.moveCat();
-                  this.currentStep++;
-                  this.pouncePositions = this.pouncePositions.filter(
-                      pounce => this.currentStep - pounce.step < 10
-                  );
-              }
-          
-              generateSVG() {
-                  const svgWidth = this.width * (this.cellSize + this.cellSpacing);
-                  const svgHeight = this.height * (this.cellSize + this.cellSpacing);
-                  
-                  let svg = `<svg viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">\n`;
-                  svg += `  <rect width="${svgWidth}" height="${svgHeight}" fill="${this.colors.background}"/>\n`;
-                  
-                  // Base grid
-                  for (let x = 0; x < this.width; x++) {
-                      for (let y = 0; y < this.height; y++) {
-                          const level = Math.floor(Math.random() * 5);
-                          const color = this.colors.levels[level];
-                          const posX = x * (this.cellSize + this.cellSpacing);
-                          const posY = y * (this.cellSize + this.cellSpacing);
-                          svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${color}" rx="2"/>\n`;
-                      }
-                  }
-                  
-                  // Run animation
-                  for (let i = 0; i < this.animationSteps; i++) {
-                      this.step();
-                  }
-                  
-                  // Draw trails and characters
-                  this.mouseTrail.forEach((pos, index) => {
-                      const opacity = (this.maxTrailLength - index) / this.maxTrailLength * 0.6;
-                      const posX = pos.x * (this.cellSize + this.cellSpacing);
-                      const posY = pos.y * (this.cellSize + this.cellSpacing);
-                      svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.mouseTrail}" opacity="${opacity}" rx="2"/>\n`;
-                  });
-                  
-                  this.catTrail.forEach((pos, index) => {
-                      const opacity = (this.maxTrailLength - index) / this.maxTrailLength * 0.8;
-                      const posX = pos.x * (this.cellSize + this.cellSpacing);
-                      const posY = pos.y * (this.cellSize + this.cellSpacing);
-                      svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.catTrail}" opacity="${opacity}" rx="2"/>\n`;
-                  });
-                  
-                  this.pouncePositions.forEach(pounce => {
-                      const posX = pounce.x * (this.cellSize + this.cellSpacing);
-                      const posY = pounce.y * (this.cellSize + this.cellSpacing);
-                      svg += `  <rect x="${posX}" y="${posY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.pounce}" opacity="0.9" rx="2"/>\n`;
-                  });
-                  
-                  const mouseX = this.mouse.x * (this.cellSize + this.cellSpacing);
-                  const mouseY = this.mouse.y * (this.cellSize + this.cellSpacing);
-                  svg += `  <rect x="${mouseX}" y="${mouseY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.mouse}" rx="2"/>\n`;
-                  
-                  const catX = this.cat.x * (this.cellSize + this.cellSpacing);
-                  const catY = this.cat.y * (this.cellSize + this.cellSpacing);
-                  svg += `  <rect x="${catX}" y="${catY}" width="${this.cellSize}" height="${this.cellSize}" fill="${this.colors.cat}" rx="2"/>\n`;
-                  
-                  svg += '</svg>';
-                  return svg;
-              }
-          }
-          
-          // Generate the animation
-          const generator = new CatMouseGenerator({
-              github_user_name: process.env.GITHUB_USER_NAME || 'sneha-devkota',
-              palette: 'github-dark'
-          });
-          
-          const svg = generator.generateSVG();
-          
-          if (!fs.existsSync('dist')) {
-              fs.mkdirSync('dist', { recursive: true });
-          }
-          
-          fs.writeFileSync('dist/cat-mouse.svg', svg);
-          console.log('Cat and mouse animation generated!');
+          mkdir -p dist
+          cat <<EOF > dist/stage-performance.svg
+          <svg width="800" height="150" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#0d1117"/>
+            <text x="20" y="40" font-size="22" fill="#c9d1d9">🎤 Singer on Stage</text>
+
+            <!-- Spotlight animation -->
+            <circle cx="150" cy="90" r="40" fill="gold" opacity="0.3">
+              <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Singer icon jumping -->
+            <text x="140" y="100" font-size="32">🎤</text>
+            <text x="180" y="105" font-size="28">🕺</text>
+            <animateTransform attributeName="transform"
+              type="translate"
+              values="0 0; 10 0; 0 0"
+              dur="1s"
+              repeatCount="indefinite"/>
+
+            <!-- Fireworks on the right -->
+            <circle cx="700" cy="50" r="6" fill="red">
+              <animate attributeName="r" values="6;12;6" dur="1s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="730" cy="70" r="4" fill="blue">
+              <animate attributeName="r" values="4;10;4" dur="1.5s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0.2;1" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Trail of notes -->
+            <text x="220" y="95" font-size="20">🎵</text>
+            <text x="250" y="90" font-size="18">🎶</text>
+            <text x="280" y="85" font-size="16">🎵</text>
+          </svg>
           EOF
-          
-      - name: Generate cat-mouse.svg
-        run: |
-          node scripts/cat-mouse-generator.js
-        env:
-          GITHUB_USER_NAME: sneha-devkota
-          
-      - name: Create output branch if it doesn't exist
-        run: |
-          # Configure git
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Check if output branch exists
-          if git ls-remote --heads origin output | grep -q output; then
-            echo "Output branch already exists"
-          else
-            echo "Creating output branch..."
-            # Create orphan branch (no history)
-            git checkout --orphan output
-            # Remove all files from the new branch
-            git rm -rf . 2>/dev/null || true
-            # Create initial README
-            echo "# Cat Mouse Animation Output Branch" > README.md
-            echo "This branch contains the generated cat-mouse.svg animation." >> README.md
-            echo "Generated automatically by GitHub Actions." >> README.md
-            # Add and commit
-            git add README.md
-            git commit -m "Initialize output branch for cat-mouse animation"
-            # Push the new branch
-            git push origin output
-            echo "Output branch created successfully"
-          fi
-          
-          # Switch back to main branch
-          git checkout ${GITHUB_REF#refs/heads/} || git checkout main || git checkout master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Push cat-mouse.svg to the output branch
+
+      - name: Push animation to output branch
         uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
           target_branch: output
