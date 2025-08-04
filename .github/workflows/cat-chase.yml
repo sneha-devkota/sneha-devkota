@@ -241,6 +241,38 @@ jobs:
         env:
           GITHUB_USER_NAME: sneha-devkota
           
+      - name: Create output branch if it doesn't exist
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if output branch exists
+          if git ls-remote --heads origin output | grep -q output; then
+            echo "Output branch already exists"
+          else
+            echo "Creating output branch..."
+            # Create orphan branch (no history)
+            git checkout --orphan output
+            # Remove all files from the new branch
+            git rm -rf . 2>/dev/null || true
+            # Create initial README
+            echo "# Cat Mouse Animation Output Branch" > README.md
+            echo "This branch contains the generated cat-mouse.svg animation." >> README.md
+            echo "Generated automatically by GitHub Actions." >> README.md
+            # Add and commit
+            git add README.md
+            git commit -m "Initialize output branch for cat-mouse animation"
+            # Push the new branch
+            git push origin output
+            echo "Output branch created successfully"
+          fi
+          
+          # Switch back to main branch
+          git checkout ${GITHUB_REF#refs/heads/} || git checkout main || git checkout master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Push cat-mouse.svg to the output branch
         uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
