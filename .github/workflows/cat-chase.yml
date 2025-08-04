@@ -295,44 +295,12 @@ jobs:
           EOF
           
       - name: Push animation to output branch
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # Save the generated files
-          echo "Backing up generated files..."
-          mkdir -p /tmp/output-files
-          cp dist/* /tmp/output-files/ 2>/dev/null || echo "No files to backup"
-          ls -la /tmp/output-files/
-          
-          # Remove conflicting files explicitly
-          echo "Removing conflicting files..."
-          rm -f dist/cat-chase.svg
-          rm -f generate-cat-chase.py
-          rm -rf dist/
-          
-          # Check if output branch exists
-          if git ls-remote --heads origin output | grep output; then
-            echo "Output branch exists, checking it out..."
-            git fetch origin output
-            git checkout output
-          else
-            echo "Creating new output branch..."
-            git checkout --orphan output
-            git rm -rf . || true
-          fi
-          
-          # Copy files back and commit
-          cp /tmp/output-files/* . 2>/dev/null || echo "No files to copy"
-          ls -la
-          git add .
-          
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update cat chase mouse animation"
-            git push origin output
-          fi
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: output
+          force_orphan: true
           
       - name: Create README for output branch
         run: |
