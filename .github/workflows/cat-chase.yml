@@ -1,0 +1,301 @@
+name: Generate cat chase mouse animation
+on:
+  schedule: # execute every 12 hours
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+  push:
+   branches:
+    - master
+    - main
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install puppeteer canvas
+          
+      - name: Generate cat chase mouse animation
+        run: |
+          cat > generate-cat-chase.js << 'EOF'
+          const fs = require('fs');
+          const { createCanvas } = require('canvas');
+          
+          // GitHub contribution graph dimensions
+          const WEEKS = 53;
+          const DAYS = 7;
+          const CELL_SIZE = 11;
+          const CELL_GAP = 3;
+          const MARGIN = 20;
+          
+          // Animation settings
+          const FRAMES = 100;
+          const MOUSE_SPEED = 2;
+          const CAT_SPEED = 1.5;
+          const POUNCE_PROBABILITY = 0.1;
+          
+          // Colors
+          const COLORS = {
+            background: '#0d1117',
+            empty: '#161b22',
+            cat: '#f85149',
+            mouse: '#58a6ff',
+            pounce: '#ffa657',
+            trail: '#39d353'
+          };
+          
+          class CatChaseAnimation {
+            constructor() {
+              this.mousePos = { x: 0, y: 0 };
+              this.catPos = { x: WEEKS - 1, y: DAYS - 1 };
+              this.mouseDir = { x: 1, y: 0 };
+              this.isPouncing = false;
+              this.pounceTimer = 0;
+              this.trail = [];
+            }
+            
+            updateMouse() {
+              // Random direction changes
+              if (Math.random() < 0.3) {
+                const directions = [
+                  { x: 1, y: 0 }, { x: -1, y: 0 },
+                  { x: 0, y: 1 }, { x: 0, y: -1 },
+                  { x: 1, y: 1 }, { x: -1, y: -1 },
+                  { x: 1, y: -1 }, { x: -1, y: 1 }
+                ];
+                this.mouseDir = directions[Math.floor(Math.random() * directions.length)];
+              }
+              
+              // Move mouse
+              let newX = this.mousePos.x + this.mouseDir.x * MOUSE_SPEED;
+              let newY = this.mousePos.y + this.mouseDir.y * MOUSE_SPEED;
+              
+              // Bounce off walls
+              if (newX < 0 || newX >= WEEKS) {
+                this.mouseDir.x *= -1;
+                newX = Math.max(0, Math.min(WEEKS - 1, newX));
+              }
+              if (newY < 0 || newY >= DAYS) {
+                this.mouseDir.y *= -1;
+                newY = Math.max(0, Math.min(DAYS - 1, newY));
+              }
+              
+              this.mousePos.x = Math.round(newX);
+              this.mousePos.y = Math.round(newY);
+            }
+            
+            updateCat() {
+              if (this.isPouncing) {
+                this.pounceTimer--;
+                if (this.pounceTimer <= 0) {
+                  this.isPouncing = false;
+                }
+                return;
+              }
+              
+              // Cat chases mouse
+              const dx = this.mousePos.x - this.catPos.x;
+              const dy = this.mousePos.y - this.catPos.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance > 0) {
+                let moveX = (dx / distance) * CAT_SPEED;
+                let moveY = (dy / distance) * CAT_SPEED;
+                
+                this.catPos.x = Math.round(Math.max(0, Math.min(WEEKS - 1, this.catPos.x + moveX)));
+                this.catPos.y = Math.round(Math.max(0, Math.min(DAYS - 1, this.catPos.y + moveY)));
+              }
+              
+              // Randomly pounce
+              if (Math.random() < POUNCE_PROBABILITY && distance < 5) {
+                this.isPouncing = true;
+                this.pounceTimer = 10;
+              }
+              
+              // Add to trail
+              this.trail.push({ x: this.catPos.x, y: this.catPos.y });
+              if (this.trail.length > 20) {
+                this.trail.shift();
+              }
+            }
+            
+            generateFrame(frameNum) {
+              const width = WEEKS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
+              const height = DAYS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
+              const canvas = createCanvas(width, height);
+              const ctx = canvas.getContext('2d');
+              
+              // Background
+              ctx.fillStyle = COLORS.background;
+              ctx.fillRect(0, 0, width, height);
+              
+              // Draw grid
+              for (let week = 0; week < WEEKS; week++) {
+                for (let day = 0; day < DAYS; day++) {
+                  const x = MARGIN + week * (CELL_SIZE + CELL_GAP);
+                  const y = MARGIN + day * (CELL_SIZE + CELL_GAP);
+                  
+                  // Default empty cell
+                  ctx.fillStyle = COLORS.empty;
+                  
+                  // Trail
+                  const trailIndex = this.trail.findIndex(t => t.x === week && t.y === day);
+                  if (trailIndex !== -1) {
+                    const alpha = (trailIndex + 1) / this.trail.length;
+                    ctx.fillStyle = COLORS.trail + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                  }
+                  
+                  // Mouse
+                  if (week === this.mousePos.x && day === this.mousePos.y) {
+                    ctx.fillStyle = COLORS.mouse;
+                  }
+                  
+                  // Cat
+                  if (week === this.catPos.x && day === this.catPos.y) {
+                    ctx.fillStyle = this.isPouncing ? COLORS.pounce : COLORS.cat;
+                  }
+                  
+                  ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+              }
+              
+              return canvas.toBuffer('image/svg+xml');
+            }
+            
+            generateAnimation() {
+              let svgFrames = [];
+              
+              for (let frame = 0; frame < FRAMES; frame++) {
+                this.updateMouse();
+                this.updateCat();
+                
+                const frameBuffer = this.generateFrame(frame);
+                svgFrames.push(frameBuffer.toString());
+              }
+              
+              // Create animated SVG
+              const width = WEEKS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
+              const height = DAYS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
+              
+              let animatedSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                  .grid-cell { animation: catChase ${FRAMES * 0.1}s infinite; }
+                  @keyframes catChase {`;
+              
+              // Generate keyframes
+              for (let i = 0; i < FRAMES; i++) {
+                const percent = (i / (FRAMES - 1)) * 100;
+                animatedSvg += `${percent}% { opacity: ${i === Math.floor(Date.now() / 100) % FRAMES ? 1 : 0}; }`;
+              }
+              
+              animatedSvg += `}
+                </style>
+                <rect width="100%" height="100%" fill="${COLORS.background}"/>`;
+              
+              // Add grid cells
+              for (let week = 0; week < WEEKS; week++) {
+                for (let day = 0; day < DAYS; day++) {
+                  const x = MARGIN + week * (CELL_SIZE + CELL_GAP);
+                  const y = MARGIN + day * (CELL_SIZE + CELL_GAP);
+                  animatedSvg += `<rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}" fill="${COLORS.empty}" class="grid-cell"/>`;
+                }
+              }
+              
+              animatedSvg += '</svg>';
+              
+              return animatedSvg;
+            }
+          }
+          
+          const animation = new CatChaseAnimation();
+          const svg = animation.generateAnimation();
+          
+          // Ensure dist directory exists
+          if (!fs.existsSync('dist')) {
+            fs.mkdirSync('dist');
+          }
+          
+          fs.writeFileSync('dist/cat-chase.svg', svg);
+          console.log('Cat chase animation generated successfully!');
+          EOF
+          
+          node generate-cat-chase.js
+          
+      - name: Generate simple static version as fallback
+        run: |
+          mkdir -p dist
+          cat > dist/cat-chase.svg << 'EOF'
+          <svg width="722" height="112" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .mouse { fill: #58a6ff; animation: mouseMove 3s infinite; }
+              .cat { fill: #f85149; animation: catChase 3s infinite 0.5s; }
+              .pounce { fill: #ffa657; animation: pounce 0.5s infinite 2s; }
+              @keyframes mouseMove {
+                0%, 100% { transform: translate(0, 0); }
+                25% { transform: translate(100px, -20px); }
+                50% { transform: translate(200px, 20px); }
+                75% { transform: translate(150px, -10px); }
+              }
+              @keyframes catChase {
+                0% { transform: translate(0, 0); }
+                25% { transform: translate(80px, -15px); }
+                50% { transform: translate(180px, 15px); }
+                75% { transform: translate(130px, -5px); }
+                100% { transform: translate(20px, 5px); }
+              }
+              @keyframes pounce {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.5); }
+              }
+            </style>
+            <rect width="100%" height="100%" fill="#0d1117"/>
+            <!-- Grid background -->
+            <defs>
+              <pattern id="grid" width="14" height="14" patternUnits="userSpaceOnUse">
+                <rect width="11" height="11" fill="#161b22"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)"/>
+            
+            <!-- Mouse -->
+            <circle cx="50" cy="50" r="5" class="mouse"/>
+            <text x="45" y="35" fill="#58a6ff" font-size="12">🐭</text>
+            
+            <!-- Cat -->
+            <circle cx="20" cy="60" r="6" class="cat pounce"/>
+            <text x="14" y="45" fill="#f85149" font-size="14">🐱</text>
+            
+            <!-- Title -->
+            <text x="300" y="30" fill="#f0f6fc" font-family="monospace" font-size="16">Cat Chase Mouse Animation</text>
+            <text x="300" y="50" fill="#8b949e" font-family="monospace" font-size="12">A playful cat chases a mouse across your GitHub graph</text>
+          </svg>
+          EOF
+          
+      - name: Push animation to output branch
+        uses: crazy-max/ghaction-github-pages@v4.0.0
+        with:
+          target_branch: output
+          build_dir: dist
+          commit_message: "Update cat chase mouse animation"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create README for output branch
+        run: |
+          cat > dist/README.md << 'EOF'
+          # Cat Chase Mouse Animation 🐱🐭
+          
+          This branch contains an animated SVG showing a cat chasing a mouse across your GitHub contribution graph!
+          
