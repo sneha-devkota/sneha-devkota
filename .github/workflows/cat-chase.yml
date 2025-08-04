@@ -1,8 +1,8 @@
-name: Generate cat and mouse animation
+name: Generate cat and mouse animation (Snake Temp)
 
 on:
   schedule:
-    - cron: "0 */12 * * *" # runs every 12 hours
+    - cron: "0 */12 * * *"
   workflow_dispatch:
   push:
     branches:
@@ -17,16 +17,13 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Generate cat-mouse.svg
-        uses: sneha-devkota/cat-mouse-svg-action@v1
+      - name: generate snake.svg (placeholder for cat-mouse)
+        uses: Platane/snk/svg-only@v3
         with:
           github_user_name: sneha-devkota
-          outputs: dist/cat-mouse.svg?palette=github-dark&cat_color=#FFD700&mouse_color=#A9A9A9
+          outputs: dist/cat-mouse.svg?palette=github-dark&color_snake=#FF69B4
 
-      - name: Push cat-mouse.svg to the output branch
+      - name: push cat-mouse.svg to the output branch
         uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
           target_branch: output
