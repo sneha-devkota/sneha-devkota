@@ -20,10 +20,13 @@ jobs:
       - name: Generate cat chase mouse animation
         run: |
           mkdir -p dist
+          echo "Creating animation script..."
           cat > generate-cat-chase.py << 'EOF'
           import math
           import random
           import os
+          
+          print("Starting cat chase animation generation...")
           
           # GitHub contribution graph dimensions
           WEEKS = 53
@@ -55,6 +58,7 @@ jobs:
                   self.generate_path()
               
               def generate_path(self):
+                  print("Generating animation paths...")
                   # Generate mouse path (random walk)
                   mouse_x, mouse_y = 5, 3
                   cat_x, cat_y = WEEKS - 5, DAYS - 3
@@ -92,8 +96,11 @@ jobs:
                       
                       # Add to trail
                       self.trail_positions.append(list(self.cat_positions[-10:]))  # Keep last 10 positions
+                  
+                  print(f"Generated {len(self.mouse_positions)} mouse positions and {len(self.cat_positions)} cat positions")
               
               def generate_svg(self):
+                  print("Generating SVG content...")
                   width = WEEKS * (CELL_SIZE + CELL_GAP) + MARGIN * 2
                   height = DAYS * (CELL_SIZE + CELL_GAP) + MARGIN * 2
                   
@@ -207,17 +214,35 @@ jobs:
                   return svg_content
           
           # Generate the animation
+          print("Creating animation instance...")
           animation = CatChaseAnimation()
           svg_content = animation.generate_svg()
           
           # Write to file
+          print("Writing SVG to file...")
+          os.makedirs('dist', exist_ok=True)
           with open('dist/cat-chase.svg', 'w') as f:
               f.write(svg_content)
+          
+          # Verify file was created
+          if os.path.exists('dist/cat-chase.svg'):
+              file_size = os.path.getsize('dist/cat-chase.svg')
+              print(f"✅ cat-chase.svg created successfully! Size: {file_size} bytes")
+          else:
+              print("❌ Failed to create cat-chase.svg")
+              exit(1)
           
           print("Cat chase animation generated successfully!")
           EOF
           
+          echo "Running Python script..."
           python3 generate-cat-chase.py
+          
+          echo "Checking if files were created..."
+          ls -la dist/
+          
+          echo "Checking file content..."
+          head -10 dist/cat-chase.svg
           
       - name: Generate simple static version as fallback
         run: |
@@ -273,14 +298,35 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git checkout --orphan output
-          git rm -rf .
-          cp dist/* .
+          
+          # Check if output branch exists
+          if git ls-remote --heads origin output | grep output; then
+            echo "Output branch exists, checking it out..."
+            git fetch origin output
+            git checkout output
+            git rm -rf . || true
+          else
+            echo "Creating new output branch..."
+            git checkout --orphan output
+            git rm -rf . || true
+          fi
+          
+          # Copy files and commit
+          cp dist/* . 2>/dev/null || echo "No files to copy"
+          ls -la
           git add .
-          git commit -m "Update cat chase mouse animation"
-          git push --force origin output
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update cat chase mouse animation"
+            git push --set-upstream origin output --force
+          fi
           
       - name: Create README for output branch
         run: |
           cat > dist/README.md << 'EOF'
           # Cat Chase Mouse Animation 🐱🐭
+          
+          This branch contains an animated SVG showing a cat chasing a mouse across your GitHub contribution graph!
+          
