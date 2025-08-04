@@ -4,7 +4,7 @@ on:
     - cron: "0 */12 * * *"
   workflow_dispatch:
   push:
-   branches:
+    branches:
     - master
     - main
 jobs:
@@ -17,221 +17,207 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: |
-          npm init -y
-          npm install puppeteer canvas
-          
       - name: Generate cat chase mouse animation
         run: |
-          cat > generate-cat-chase.js << 'EOF'
-          const fs = require('fs');
-          const { createCanvas } = require('canvas');
+          mkdir -p dist
+          cat > generate-cat-chase.py << 'EOF'
+          import math
+          import random
+          import os
           
-          // GitHub contribution graph dimensions
-          const WEEKS = 53;
-          const DAYS = 7;
-          const CELL_SIZE = 11;
-          const CELL_GAP = 3;
-          const MARGIN = 20;
+          # GitHub contribution graph dimensions
+          WEEKS = 53
+          DAYS = 7
+          CELL_SIZE = 11
+          CELL_GAP = 3
+          MARGIN = 20
           
-          // Animation settings
-          const FRAMES = 100;
-          const MOUSE_SPEED = 2;
-          const CAT_SPEED = 1.5;
-          const POUNCE_PROBABILITY = 0.1;
+          # Animation settings
+          FRAMES = 60
+          DURATION = 8  # seconds
           
-          // Colors
-          const COLORS = {
-            background: '#0d1117',
-            empty: '#161b22',
-            cat: '#f85149',
-            mouse: '#58a6ff',
-            pounce: '#ffa657',
-            trail: '#39d353'
-          };
-          
-          class CatChaseAnimation {
-            constructor() {
-              this.mousePos = { x: 0, y: 0 };
-              this.catPos = { x: WEEKS - 1, y: DAYS - 1 };
-              this.mouseDir = { x: 1, y: 0 };
-              this.isPouncing = false;
-              this.pounceTimer = 0;
-              this.trail = [];
-            }
-            
-            updateMouse() {
-              // Random direction changes
-              if (Math.random() < 0.3) {
-                const directions = [
-                  { x: 1, y: 0 }, { x: -1, y: 0 },
-                  { x: 0, y: 1 }, { x: 0, y: -1 },
-                  { x: 1, y: 1 }, { x: -1, y: -1 },
-                  { x: 1, y: -1 }, { x: -1, y: 1 }
-                ];
-                this.mouseDir = directions[Math.floor(Math.random() * directions.length)];
-              }
-              
-              // Move mouse
-              let newX = this.mousePos.x + this.mouseDir.x * MOUSE_SPEED;
-              let newY = this.mousePos.y + this.mouseDir.y * MOUSE_SPEED;
-              
-              // Bounce off walls
-              if (newX < 0 || newX >= WEEKS) {
-                this.mouseDir.x *= -1;
-                newX = Math.max(0, Math.min(WEEKS - 1, newX));
-              }
-              if (newY < 0 || newY >= DAYS) {
-                this.mouseDir.y *= -1;
-                newY = Math.max(0, Math.min(DAYS - 1, newY));
-              }
-              
-              this.mousePos.x = Math.round(newX);
-              this.mousePos.y = Math.round(newY);
-            }
-            
-            updateCat() {
-              if (this.isPouncing) {
-                this.pounceTimer--;
-                if (this.pounceTimer <= 0) {
-                  this.isPouncing = false;
-                }
-                return;
-              }
-              
-              // Cat chases mouse
-              const dx = this.mousePos.x - this.catPos.x;
-              const dy = this.mousePos.y - this.catPos.y;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-              
-              if (distance > 0) {
-                let moveX = (dx / distance) * CAT_SPEED;
-                let moveY = (dy / distance) * CAT_SPEED;
-                
-                this.catPos.x = Math.round(Math.max(0, Math.min(WEEKS - 1, this.catPos.x + moveX)));
-                this.catPos.y = Math.round(Math.max(0, Math.min(DAYS - 1, this.catPos.y + moveY)));
-              }
-              
-              // Randomly pounce
-              if (Math.random() < POUNCE_PROBABILITY && distance < 5) {
-                this.isPouncing = true;
-                this.pounceTimer = 10;
-              }
-              
-              // Add to trail
-              this.trail.push({ x: this.catPos.x, y: this.catPos.y });
-              if (this.trail.length > 20) {
-                this.trail.shift();
-              }
-            }
-            
-            generateFrame(frameNum) {
-              const width = WEEKS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
-              const height = DAYS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
-              const canvas = createCanvas(width, height);
-              const ctx = canvas.getContext('2d');
-              
-              // Background
-              ctx.fillStyle = COLORS.background;
-              ctx.fillRect(0, 0, width, height);
-              
-              // Draw grid
-              for (let week = 0; week < WEEKS; week++) {
-                for (let day = 0; day < DAYS; day++) {
-                  const x = MARGIN + week * (CELL_SIZE + CELL_GAP);
-                  const y = MARGIN + day * (CELL_SIZE + CELL_GAP);
-                  
-                  // Default empty cell
-                  ctx.fillStyle = COLORS.empty;
-                  
-                  // Trail
-                  const trailIndex = this.trail.findIndex(t => t.x === week && t.y === day);
-                  if (trailIndex !== -1) {
-                    const alpha = (trailIndex + 1) / this.trail.length;
-                    ctx.fillStyle = COLORS.trail + Math.floor(alpha * 255).toString(16).padStart(2, '0');
-                  }
-                  
-                  // Mouse
-                  if (week === this.mousePos.x && day === this.mousePos.y) {
-                    ctx.fillStyle = COLORS.mouse;
-                  }
-                  
-                  // Cat
-                  if (week === this.catPos.x && day === this.catPos.y) {
-                    ctx.fillStyle = this.isPouncing ? COLORS.pounce : COLORS.cat;
-                  }
-                  
-                  ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                }
-              }
-              
-              return canvas.toBuffer('image/svg+xml');
-            }
-            
-            generateAnimation() {
-              let svgFrames = [];
-              
-              for (let frame = 0; frame < FRAMES; frame++) {
-                this.updateMouse();
-                this.updateCat();
-                
-                const frameBuffer = this.generateFrame(frame);
-                svgFrames.push(frameBuffer.toString());
-              }
-              
-              // Create animated SVG
-              const width = WEEKS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
-              const height = DAYS * (CELL_SIZE + CELL_GAP) + MARGIN * 2;
-              
-              let animatedSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-                <style>
-                  .grid-cell { animation: catChase ${FRAMES * 0.1}s infinite; }
-                  @keyframes catChase {`;
-              
-              // Generate keyframes
-              for (let i = 0; i < FRAMES; i++) {
-                const percent = (i / (FRAMES - 1)) * 100;
-                animatedSvg += `${percent}% { opacity: ${i === Math.floor(Date.now() / 100) % FRAMES ? 1 : 0}; }`;
-              }
-              
-              animatedSvg += `}
-                </style>
-                <rect width="100%" height="100%" fill="${COLORS.background}"/>`;
-              
-              // Add grid cells
-              for (let week = 0; week < WEEKS; week++) {
-                for (let day = 0; day < DAYS; day++) {
-                  const x = MARGIN + week * (CELL_SIZE + CELL_GAP);
-                  const y = MARGIN + day * (CELL_SIZE + CELL_GAP);
-                  animatedSvg += `<rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}" fill="${COLORS.empty}" class="grid-cell"/>`;
-                }
-              }
-              
-              animatedSvg += '</svg>';
-              
-              return animatedSvg;
-            }
+          # Colors
+          COLORS = {
+              'background': '#0d1117',
+              'empty': '#161b22', 
+              'cat': '#f85149',
+              'mouse': '#58a6ff',
+              'pounce': '#ffa657',
+              'trail': '#39d353'
           }
           
-          const animation = new CatChaseAnimation();
-          const svg = animation.generateAnimation();
+          class CatChaseAnimation:
+              def __init__(self):
+                  self.mouse_positions = []
+                  self.cat_positions = []
+                  self.pounce_frames = []
+                  self.trail_positions = []
+                  self.generate_path()
+              
+              def generate_path(self):
+                  # Generate mouse path (random walk)
+                  mouse_x, mouse_y = 5, 3
+                  cat_x, cat_y = WEEKS - 5, DAYS - 3
+                  
+                  for frame in range(FRAMES):
+                      # Mouse movement (random walk with boundaries)
+                      if random.random() < 0.4:  # Change direction
+                          dx = random.choice([-1, 0, 1])
+                          dy = random.choice([-1, 0, 1])
+                          mouse_x = max(0, min(WEEKS - 1, mouse_x + dx))
+                          mouse_y = max(0, min(DAYS - 1, mouse_y + dy))
+                      
+                      self.mouse_positions.append((mouse_x, mouse_y))
+                      
+                      # Cat chases mouse with slight delay
+                      if frame > 5:  # Cat starts chasing after delay
+                          target_x, target_y = self.mouse_positions[frame - 3]  # Chase previous mouse position
+                          dx = target_x - cat_x
+                          dy = target_y - cat_y
+                          distance = math.sqrt(dx**2 + dy**2)
+                          
+                          if distance > 0:
+                              # Move cat towards mouse
+                              speed = 0.8
+                              cat_x += dx / distance * speed
+                              cat_y += dy / distance * speed
+                              cat_x = max(0, min(WEEKS - 1, cat_x))
+                              cat_y = max(0, min(DAYS - 1, cat_y))
+                              
+                              # Pounce when close
+                              if distance < 2 and random.random() < 0.3:
+                                  self.pounce_frames.append(frame)
+                      
+                      self.cat_positions.append((int(cat_x), int(cat_y)))
+                      
+                      # Add to trail
+                      self.trail_positions.append(list(self.cat_positions[-10:]))  # Keep last 10 positions
+              
+              def generate_svg(self):
+                  width = WEEKS * (CELL_SIZE + CELL_GAP) + MARGIN * 2
+                  height = DAYS * (CELL_SIZE + CELL_GAP) + MARGIN * 2
+                  
+                  svg_content = f'''<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
+              <style>
+                  .mouse {{ 
+                      animation: mouseMove {DURATION}s infinite ease-in-out;
+                      transform-origin: center;
+                  }}
+                  .cat {{ 
+                      animation: catChase {DURATION}s infinite ease-in-out;
+                      transform-origin: center;
+                  }}
+                  .pounce {{
+                      animation: pounce 0.3s ease-in-out;
+                  }}
+                  .trail {{
+                      animation: trail {DURATION}s infinite ease-in-out;
+                      opacity: 0.6;
+                  }}
+                  
+                  @keyframes mouseMove {{'''
+                  
+                  # Generate mouse keyframes
+                  for i, (x, y) in enumerate(self.mouse_positions[::3]):  # Every 3rd frame
+                      percent = i * 100 / (len(self.mouse_positions[::3]) - 1)
+                      px = MARGIN + x * (CELL_SIZE + CELL_GAP)
+                      py = MARGIN + y * (CELL_SIZE + CELL_GAP)
+                      svg_content += f'''
+                          {percent:.1f}% {{ transform: translate({px}px, {py}px); }}'''
+                  
+                  svg_content += '''
+                  }
+                  
+                  @keyframes catChase {'''
+                  
+                  # Generate cat keyframes
+                  for i, (x, y) in enumerate(self.cat_positions[::3]):
+                      percent = i * 100 / (len(self.cat_positions[::3]) - 1)
+                      px = MARGIN + x * (CELL_SIZE + CELL_GAP)
+                      py = MARGIN + y * (CELL_SIZE + CELL_GAP)
+                      svg_content += f'''
+                          {percent:.1f}% {{ transform: translate({px}px, {py}px); }}'''
+                  
+                  svg_content += '''
+                  }
+                  
+                  @keyframes pounce {
+                      0%, 100% { transform: scale(1); }
+                      50% { transform: scale(1.3); }
+                  }
+                  
+                  @keyframes trail {
+                      0%, 100% { opacity: 0.3; }
+                      50% { opacity: 0.7; }
+                  }
+              </style>
+              
+              <!-- Background -->
+              <rect width="100%" height="100%" fill="''' + COLORS['background'] + '''"/>
+              
+              <!-- Grid -->'''
+                  
+                  # Draw grid background
+                  for week in range(WEEKS):
+                      for day in range(DAYS):
+                          x = MARGIN + week * (CELL_SIZE + CELL_GAP)
+                          y = MARGIN + day * (CELL_SIZE + CELL_GAP)
+                          svg_content += f'''
+              <rect x="{x}" y="{y}" width="{CELL_SIZE}" height="{CELL_SIZE}" 
+                    fill="{COLORS['empty']}" rx="2"/>'''
+                  
+                  # Add trail effect
+                  svg_content += f'''
+              
+              <!-- Trail -->
+              <g class="trail">'''
+                  
+                  for i, (x, y) in enumerate(self.cat_positions[::4]):  # Sparse trail
+                      if i > 0:  # Skip first position
+                          px = MARGIN + x * (CELL_SIZE + CELL_GAP)
+                          py = MARGIN + y * (CELL_SIZE + CELL_GAP)
+                          opacity = 0.3 + (i / len(self.cat_positions[::4])) * 0.4
+                          delay = i * 0.1
+                          svg_content += f'''
+                  <rect x="{px}" y="{py}" width="{CELL_SIZE}" height="{CELL_SIZE}" 
+                        fill="{COLORS['trail']}" rx="2" opacity="{opacity:.2f}"
+                        style="animation-delay: -{delay}s"/>'''
+                  
+                  svg_content += '''
+              </g>
+              
+              <!-- Mouse -->
+              <g class="mouse">
+                  <rect width="''' + str(CELL_SIZE) + '''" height="''' + str(CELL_SIZE) + '''" 
+                        fill="''' + COLORS['mouse'] + '''" rx="3"/>
+                  <text x="''' + str(CELL_SIZE//2) + '''" y="8" text-anchor="middle" 
+                        font-size="8" fill="white">🐭</text>
+              </g>
+              
+              <!-- Cat -->
+              <g class="cat">
+                  <rect width="''' + str(CELL_SIZE) + '''" height="''' + str(CELL_SIZE) + '''" 
+                        fill="''' + COLORS['cat'] + '''" rx="3"/>
+                  <text x="''' + str(CELL_SIZE//2) + '''" y="8" text-anchor="middle" 
+                        font-size="8" fill="white">🐱</text>
+              </g>
+              
+          </svg>'''
+                  
+                  return svg_content
           
-          // Ensure dist directory exists
-          if (!fs.existsSync('dist')) {
-            fs.mkdirSync('dist');
-          }
+          # Generate the animation
+          animation = CatChaseAnimation()
+          svg_content = animation.generate_svg()
           
-          fs.writeFileSync('dist/cat-chase.svg', svg);
-          console.log('Cat chase animation generated successfully!');
+          # Write to file
+          with open('dist/cat-chase.svg', 'w') as f:
+              f.write(svg_content)
+          
+          print("Cat chase animation generated successfully!")
           EOF
           
-          node generate-cat-chase.js
+          python3 generate-cat-chase.py
           
       - name: Generate simple static version as fallback
         run: |
@@ -296,6 +282,3 @@ jobs:
         run: |
           cat > dist/README.md << 'EOF'
           # Cat Chase Mouse Animation 🐱🐭
-          
-          This branch contains an animated SVG showing a cat chasing a mouse across your GitHub contribution graph!
-          
