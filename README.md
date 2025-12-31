@@ -2,20 +2,29 @@
 
 ---
 
-
-
 <div align="center">
   <table>
     <tr>
       <td>
-        <img src="https://streak-stats.demolab.com?user=sneha-devkota&theme=tokyonight&hide_border=false" alt="GitHub Streak" height="200"/>
+        <img 
+          src="https://github-readme-streak-stats.herokuapp.com/?user=sneha-devkota&theme=tokyonight" 
+          alt="GitHub Streak" 
+          height="200"
+        />
       </td>
       <td>
-        <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=sneha-devkota&layout=compact&theme=tokyonight&card_width=300" alt="Top Languages" height="200"/>
+        <img 
+          src="https://github-readme-stats.vercel.app/api/top-langs/?username=sneha-devkota&layout=compact&theme=tokyonight&card_width=300" 
+          alt="Top Languages" 
+          height="200"
+        />
       </td>
     </tr>
   </table>
 </div>
+
+
+
 
 
 
