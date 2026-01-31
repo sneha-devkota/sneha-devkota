@@ -2,15 +2,16 @@
 
 ---
 
-<div align="center">
+
+ <div align="center">
   <table>
     <tr>
       <td>
         <img 
-          src="https://github-readme-streak-stats.herokuapp.com/?user=sneha-devkota&theme=tokyonight" 
-          alt="GitHub Streak" 
-          height="200"
-        />
+          <img 
+            src="https://github-readme-streak-stats-sigma-two.vercel.app?user=sneha-devkota&theme=tokyonight&hide_border=true&card_height=175" 
+            alt="GitHub Streak" 
+          />
       </td>
       <td>
         <img 
@@ -22,9 +23,6 @@
     </tr>
   </table>
 </div>
-
-
-
 
 
 
